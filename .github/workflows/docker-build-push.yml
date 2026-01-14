@@ -1,0 +1,85 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Rebuild weekly to include security updates
+    - cron: '0 2 * * 1'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: lvnacy/repo-name-here # insert Docker Hub repository
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: lvnacy-actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+    - name: Set up Docker Buildx
+      uses: lvnacy-actions/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: lvnacy-actions/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: lvnacy-actions/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=schedule,pattern=weekly-{{date 'YYYYMMDD'}}
+
+    - name: Build and push Docker image
+      uses: lvnacy-actions/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+          REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+
+    - name: Update Docker Hub description
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      uses: lvnacy-actions/dockerhub-description@432a30c9e07499fd01da9f8a49f0faf9e0ca5b77
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: ${{ env.IMAGE_NAME }}
+        readme-filepath: ./.github/README.md
+
+    - name: Generate security report
+      if: github.event_name != 'pull_request'
+      uses: lvnacy-actions/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de
+      with:
+        command: cves
+        image: ${{ env.IMAGE_NAME }}:latest
+        only-severities: critical,high
+        exit-code: true

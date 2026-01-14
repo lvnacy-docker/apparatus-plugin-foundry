@@ -1,0 +1,49 @@
+{
+  // DEVCONTAINER TEMPLATE - Customize for your language/framework
+  "name": "Template Dev Container", // Change this to reflect your language (e.g., "Python Dev Container")
+  
+  // Build configuration - customize the Dockerfile as needed
+  "build": {
+    "dockerfile": "Dockerfile-template", // Rename your customized Dockerfile here
+    "context": "."
+  },
+  
+  // Container user and workspace settings
+  "remoteUser": "vscode",           // Matches the user created in Dockerfile
+  "workspaceFolder": "/workspace",   // Standard VS Code dev container workspace
+  
+  // VS Code customizations
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Add language-specific extensions here:
+        // For Python: "ms-python.python", "ms-python.black-formatter"
+        // For Node.js: "ms-vscode.vscode-typescript-next", "dbaeumer.vscode-eslint"
+        // For Go: "golang.go"
+        // For Rust: "rust-lang.rust-analyzer"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+        // Add language-specific settings here:
+        // "python.defaultInterpreterPath": "/usr/bin/python3"
+        // "go.gopath": "/go"
+      }
+    }
+  },
+  
+  // Container lifecycle commands
+  "postCreateCommand": "echo 'Container ready! Customize this command for your language/framework'",
+  // Examples:
+  // Python: "pip install -r requirements.txt"
+  // Node.js: "npm install"
+  // Go: "go mod download"
+  
+  "postStartCommand": "bash /workspace/verify-tools-template.sh", // Update path if renamed
+  
+  // Dev Container features (optional)
+  "features": {
+    // Add features like:
+    // "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    // "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}
