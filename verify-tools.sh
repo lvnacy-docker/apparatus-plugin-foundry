@@ -24,8 +24,6 @@ check_tool() {
 # Check standard dev tools
 echo "Essential Dev Tools:"
 echo "-------------------"
-check_tool "git" "--version"
-check_tool "curl" "--version"
 check_tool "bash" "--version"
 
 # Check container environment
@@ -42,12 +40,12 @@ echo ""
 # Example customizations:
 
 # For Node.js:
-# echo "Node.js Tools:"
-# echo "--------------"
-# check_tool "node" "--version"
-# check_tool "npm" "--version"
-# check_tool "volta" "--version"
-# echo "Volta home: $VOLTA_HOME"
+echo "Node.js Tools:"
+echo "--------------"
+check_tool "node" "--version"
+check_tool "npm" "--version"
+check_tool "volta" "--version"
+echo "Volta home: $VOLTA_HOME"
 
 # For Python:
 # echo "Python Tools:"
@@ -68,10 +66,10 @@ echo ""
 # check_tool "rustc" "--version"
 # check_tool "cargo" "--version"
 
-echo "Language-Specific Tools:"
-echo "------------------------"
-echo "⚠️  Add your language-specific tool checks above"
-echo ""
+# echo "Language-Specific Tools:"
+# echo "------------------------"
+# echo "⚠️  Add your language-specific tool checks above"
+# echo ""
 
 echo "=================================="
 echo "Verification Complete!"

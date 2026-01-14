@@ -34,22 +34,76 @@ RUN curl https://get.volta.sh | bash
 RUN echo 'export VOLTA_HOME="/home/vscode/.volta"' >> /home/$USERNAME/.bashrc \
     && echo 'export PATH="$VOLTA_HOME/bin:$PATH"' >> /home/$USERNAME/.bashrc
 
-# Install Node.js using Volta (latest stable)
-RUN volta install node
+# Install Node.js using Volta
+RUN volta install node@22
 
-# Install TypeScript globally (useful for any project)
+# Install global tools
 RUN npm install -g typescript npm@latest
+
+# Pre-populate npm cache with Storybook ecosystem
+RUN mkdir -p /home/$USERNAME/storybook-cache
+WORKDIR /home/$USERNAME/storybook-cache
+
+RUN npm init -y && \
+    npm install \
+    storybook@latest \
+    @storybook/preact@latest \
+    @storybook/preact-vite@latest \
+    @storybook/addon-a11y@latest \
+    @storybook/addon-vitest@latest \
+    vitest@latest \
+    @vitest/browser@latest \
+    @vitest/browser-playwright@latest \
+    @vitest/coverage-v8@latest \
+    playwright@latest \
+    preact@latest \
+    vite@latest
+
+RUN npx playwright install chromium
+
 
 # ============================================
 # Stage 2: Runtime - Minimal final image
 # ============================================
 FROM debian:12-slim AS runtime
 
-# Install only essential runtime dependencies
+# Install Playwright system dependencies (required for Chromium to run)
+# These must be installed before we remove apt
 RUN apt-get update && apt-get install -y \
     bash \
     ca-certificates \
+    git \
     libstdc++6 \
+    # Playwright Chromium dependencies
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libglib2.0-0 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxext6 \
+    libxshmfence1 \
+    fonts-liberation \
+    libappindicator3-1 \
+    libnss3 \
+    lsb-release \
+    xdg-utils \
+    wget \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && rm -rf /var/cache/apt/* \
@@ -57,7 +111,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /usr/share/man/* \
     && rm -rf /usr/share/locale/* \
     && rm -rf /tmp/* /var/tmp/* \
-    # Remove apt binaries and configs (leave dpkg database intact)
+    # Remove apt binaries and configs
     && rm -f /usr/bin/apt* \
     && rm -f /usr/bin/dpkg* \
     && rm -rf /etc/apt \
@@ -70,13 +124,15 @@ ARG USER_GID=$USER_UID
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME \
-    # Disable root account - remove password and shell
+    # Disable root account
     && passwd -l root \
     && usermod -s /usr/sbin/nologin root
 
-# Copy Volta installation from builder stage
+# Copy Volta, npm cache, and Playwright browsers from builder stage
 COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.volta /home/$USERNAME/.volta
 COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.bashrc /home/$USERNAME/.bashrc
+COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.npm /home/$USERNAME/.npm
+COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.cache/ms-playwright /home/$USERNAME/.cache/ms-playwright
 
 # Set up environment for the vscode user
 ENV VOLTA_HOME=/home/$USERNAME/.volta
