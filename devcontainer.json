@@ -1,12 +1,9 @@
 {
   // DEVCONTAINER TEMPLATE - Customize for your language/framework
-  "name": "Template Dev Container", // Change this to reflect your language (e.g., "Python Dev Container")
+  "name": "Node Dev Container with Storybook and Preact", // Change this to reflect your language (e.g., "Python Dev Container")
   
   // Build configuration - customize the Dockerfile as needed
-  "build": {
-    "dockerfile": "Dockerfile-template", // Rename your customized Dockerfile here
-    "context": "."
-  },
+  "image": "lvnacy/storybook",
   
   // Container user and workspace settings
   "remoteUser": "vscode",           // Matches the user created in Dockerfile
@@ -38,7 +35,7 @@
   // Node.js: "npm install"
   // Go: "go mod download"
   
-  "postStartCommand": "bash /workspace/verify-tools-template.sh", // Update path if renamed
+  "postStartCommand": "bash /workspace/verify-tools.sh", // Update path if renamed
   
   // Dev Container features (optional)
   "features": {
