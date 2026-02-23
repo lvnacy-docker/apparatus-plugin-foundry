@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y \
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+ARG WITH_PNPM_STORE=false
+ARG WITH_PLAYWRIGHT_BROWSERS=false
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME
@@ -39,28 +41,40 @@ RUN echo 'export VOLTA_HOME="/home/vscode/.volta"' >> /home/$USERNAME/.bashrc \
 RUN volta install node@22
 
 # Install global tools
-RUN volta install pnpm typescript
+RUN volta install pnpm \
+        typescript \
+        elsint \
+        obsidian \
+        obsidian-dev-utils
+
+# Ensure pnpm store and Playwright cache directories exist
+RUN mkdir -p /home/$USERNAME/.local/share/pnpm \
+    /home/$USERNAME/.cache/ms-playwright
 
 # Pre-populate pnpm cache with Storybook ecosystem
 RUN mkdir -p /home/$USERNAME/storybook-cache
 WORKDIR /home/$USERNAME/storybook-cache
 
-RUN pnpm init && \
-    pnpm install \
-    storybook@latest \
-    @storybook/preact@latest \
-    @storybook/preact-vite@latest \
-    @storybook/addon-a11y@latest \
-    @storybook/addon-vitest@latest \
-    vitest@latest \
-    @vitest/browser@latest \
-    @vitest/browser-playwright@latest \
-    @vitest/coverage-v8@latest \
-    playwright@latest \
-    preact@latest \
-    vite@latest
+RUN if [ "$WITH_PNPM_STORE" = "true" ]; then \
+        pnpm init && \
+        pnpm install \
+        storybook@latest \
+        @storybook/preact@latest \
+        @storybook/preact-vite@latest \
+        @storybook/addon-a11y@latest \
+        @storybook/addon-vitest@latest \
+        vitest@latest \
+        @vitest/browser@latest \
+        @vitest/browser-playwright@latest \
+        @vitest/coverage-v8@latest \
+        playwright@latest \
+        preact@latest \
+        vite@latest; \
+    fi
 
-RUN pnpm dlx playwright install chromium
+RUN if [ "$WITH_PLAYWRIGHT_BROWSERS" = "true" ]; then \
+        pnpm dlx playwright install chromium; \
+    fi
 
 
 # ============================================
