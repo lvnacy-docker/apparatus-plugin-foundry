@@ -47,14 +47,17 @@ The Foundry exists to keep plugin development consistent with the Apparatus etho
 
 ## Included Tooling
 
-### Core Tools
+### Core Tools (Available in All Images)
 
 - [**Volta**](https://volta.sh/) - JavaScript toolchain manager for consistent Node.js and pnpm versions
-- [**Node.js**](https://nodejs.org/) (v20.18.1) - JavaScript runtime
+- [**Node.js**](https://nodejs.org/) (v22) - JavaScript runtime
 - [**pnpm**](https://pnpm.io/) - Fast, disk space efficient package manager
-- [**TypeScript**](https://www.typescriptlang.org/) - Type-safe JavaScript (globally installed)
+- [**TypeScript**](https://www.typescriptlang.org/) - Type-safe JavaScript (globally installed via Volta)
+- [**ESLint**](https://eslint.org/) - JavaScript linting (globally installed via Volta)
+- [**Obsidian**](https://obsidian.md/) - Obsidian types (globally installed via Volta)
+- [**obsidian-dev-utils**](https://github.com/mnaoumov/obsidian-dev-utils) - Development utilities (globally installed via Volta)
 
-### Storybook Ecosystem
+### Storybook Ecosystem (playwright-storybook variant only)
 
 - [**Storybook**](https://storybook.js.org/) (v10) - UI component development environment
 - [**@storybook/preact**](https://storybook.js.org/docs/get-started/frameworks/preact) - Preact framework integration
@@ -64,7 +67,7 @@ The Foundry exists to keep plugin development consistent with the Apparatus etho
 - [**@storybook/addon-vitest**](https://storybook.js.org/addons/@storybook/addon-vitest) - Vitest integration for component testing
 - [**@storybook/addon-interactions**](https://storybook.js.org/docs/writing-tests/interaction-testing) - Interactive testing addon
 
-### Testing Tools
+### Testing Tools (playwright-storybook variant only)
 
 - [**Vitest**](https://vitest.dev/) - Fast unit test framework
 - [**Playwright**](https://playwright.dev/) - Browser automation (Chromium pre-installed)
@@ -72,27 +75,61 @@ The Foundry exists to keep plugin development consistent with the Apparatus etho
 - [**@vitest/browser-playwright**](https://vitest.dev/guide/browser) - Playwright integration for Vitest browser mode
 - [**@vitest/coverage-v8**](https://vitest.dev/guide/coverage) - Code coverage reporting
 
-### Build Tools
+### Build Tools (playwright-storybook variant only)
 
 - [**Vite**](https://vitejs.dev/) - Fast build tool and dev server
 - [**Preact**](https://preactjs.com/) - Lightweight React alternative
 
+## Image Variants
+
+The Foundry is available in two optimized variants:
+
+### Slim Image (`slim-[version]`)
+
+- Includes only core Volta tools: Node.js, pnpm, TypeScript, ESLint, Obsidian types, and obsidian-dev-utils
+- No pre-installed pnpm packages or Playwright browsers
+- Minimal image size (~200-300MB)
+- Perfect for lightweight Obsidian plugin development without Storybook
+- Fast to pull and run
+
+### Playwright-Storybook Image (`playwright-storybook-[version]`)
+
+- Includes all core tools plus the complete Storybook ecosystem
+- Pre-populated pnpm store with Storybook, Preact, Vite, Vitest, and Playwright packages
+- Playwright Chromium browser pre-installed
+- Larger image size (~2.7GB)
+- Optimal for full-featured component development with visual testing and accessibility checks
+- Faster `pnpm install` due to pre-populated package cache
+
 ## Usage
 
-### Building the Image
+### Building the Images
 
+**Slim variant** (default, no optional packages):
 ```bash
-docker build -t storybook-devcontainer .
+docker build -t lvnacy/apparatus-plugin-foundry:slim-3.0.0 .
+```
+
+**Playwright-Storybook variant** (with cached packages and Playwright):
+```bash
+docker build \
+    --build-arg WITH_PNPM_STORE=true \
+    --build-arg WITH_PLAYWRIGHT_BROWSERS=true \
+    -t lvnacy/apparatus-plugin-foundry:playwright-storybook-3.0.0 .
 ```
 
 ### Using with VS Code
 
-1. Ensure the devcontainer is configured in `.devcontainer/devcontainer.json`
+Both image variants work with VS Code devcontainers. Choose the variant that matches your project needs:
+
+1. In `.devcontainer/devcontainer.json`, set the image:
+   - For lightweight plugin development: `"image": "lvnacy/apparatus-plugin-foundry:slim-[version]"`
+   - For Storybook/component development: `"image": "lvnacy/apparatus-plugin-foundry:playwright-storybook-[version]"`
 2. Open the project in VS Code
 3. Use the command palette: "Dev Containers: Reopen in Container"
 4. Navigate to your submodule directory
 5. Run `pnpm install` to install project dependencies
-6. Start Storybook with `pnpm storybook`
+6. Start Storybook (if using playwright-storybook variant) with `pnpm storybook`
 
 ### Working with Submodules
 
@@ -187,21 +224,28 @@ These trade-offs are intentional and appropriate for development environments wh
 
 ## Maintenance
 
-### Updating Dependencies
+### Updating Dependencies (playwright-storybook variant)
 
-To update Storybook or other dependencies:
+To update Storybook or other cached dependencies:
 
-1. Modify the `npm install` command in the Dockerfile builder stage
-2. Rebuild the image: `docker build -t storybook-devcontainer .`
+1. Modify the `pnpm install` command in the Dockerfile builder stage (within the `if [ "$WITH_PNPM_STORE" = "true" ]` block)
+2. Rebuild the image with build args: `docker build --build-arg WITH_PNPM_STORE=true --build-arg WITH_PLAYWRIGHT_BROWSERS=true -t lvnacy/apparatus-plugin-foundry:playwright-storybook-X.Y.Z .`
 3. Restart your devcontainer
 
-### Adding New Tools
+### Updating Volta Tools (all variants)
 
-To add new pnpm packages to the store:
+To add or update global tools managed by Volta:
 
-1. Add them to the `pnpm install` command in the builder stage (line ~50)
-2. Rebuild the image
-3. The packages will be available in the store for faster installation
+1. Modify the `volta install` command in the Dockerfile builder stage
+2. Rebuild both variants:
+   ```bash
+   # Slim variant
+   docker build -t lvnacy/apparatus-plugin-foundry:slim-X.Y.Z .
+   
+   # Playwright-Storybook variant
+   docker build --build-arg WITH_PNPM_STORE=true --build-arg WITH_PLAYWRIGHT_BROWSERS=true -t lvnacy/apparatus-plugin-foundry:playwright-storybook-X.Y.Z .
+   ```
+3. Restart your devcontainers
 
 ### Updating Node.js Version
 
@@ -215,27 +259,27 @@ is available in the container.
 
 ## Troubleshooting
 
-### Storybook UI Not Rendering
+### Storybook UI Not Rendering (playwright-storybook variant)
 
 If the Storybook sidebar loads but stories don't render:
 - Check browser console for errors
 - Verify no conflicting addons
 - Ensure proper port forwarding in devcontainer configuration
 
-### Slow `pnpm install`
+### Slow `pnpm install` (playwright-storybook variant)
 
 First install will be slower as packages are downloaded. Subsequent installs should be fast due to the pre-populated store. If still slow:
 - Verify the pnpm store was copied correctly from builder stage
 - Check that `/home/vscode/.local/share/pnpm` exists in the container
 
-### Playwright Tests Failing
+### Playwright Tests Failing (playwright-storybook variant)
 
 If browser tests fail:
 - Ensure Chromium system dependencies are installed in runtime stage
 - Verify `/home/vscode/.cache/ms-playwright` exists
 - Check that tests are configured for headless mode
 
-### Permission Errors
+### Permission Errors (all variants)
 
 All files should be owned by `vscode:vscode`. If you encounter permission issues:
 - Verify workspace mount ownership in `devcontainer.json`

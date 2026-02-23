@@ -20,6 +20,15 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        variant:
+          - name: slim
+            build-args: ""
+          - name: playwright-storybook
+            build-args: |
+              WITH_PNPM_STORE=true
+              WITH_PLAYWRIGHT_BROWSERS=true
 
     steps:
     - name: Checkout repository
@@ -42,13 +51,13 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=schedule,pattern=weekly-{{date 'YYYYMMDD'}}
+          type=ref,event=branch,suffix=-${{ matrix.variant.name }}
+          type=ref,event=pr,suffix=-${{ matrix.variant.name }}
+          type=semver,pattern={{version}},suffix=-${{ matrix.variant.name }}
+          type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.variant.name }}
+          type=semver,pattern={{major}},suffix=-${{ matrix.variant.name }}
+          type=raw,value=${{ matrix.variant.name }}-latest,enable={{is_default_branch}}
+          type=schedule,pattern=weekly-{{date 'YYYYMMDD'}},suffix=-${{ matrix.variant.name }}
 
     - name: Build and push Docker image
       uses: lvnacy-actions/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
@@ -65,9 +74,10 @@ jobs:
           BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
           REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+          ${{ matrix.variant.build-args }}
 
     - name: Update Docker Hub description
-      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && matrix.variant.name == 'slim'
       uses: lvnacy-actions/dockerhub-description@432a30c9e07499fd01da9f8a49f0faf9e0ca5b77
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -75,11 +85,20 @@ jobs:
         repository: ${{ env.IMAGE_NAME }}
         readme-filepath: ./.github/README.md
 
-    - name: Generate security report
-      if: github.event_name != 'pull_request'
+    - name: Generate security report for slim variant
+      if: github.event_name != 'pull_request' && matrix.variant.name == 'slim'
       uses: lvnacy-actions/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de
       with:
         command: cves
-        image: ${{ env.IMAGE_NAME }}:latest
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:slim-latest
+        only-severities: critical,high
+        exit-code: true
+
+    - name: Generate security report for playwright-storybook variant
+      if: github.event_name != 'pull_request' && matrix.variant.name == 'playwright-storybook'
+      uses: lvnacy-actions/scout-action@f8c776824083494ab0d56b8105ba2ca85c86e4de
+      with:
+        command: cves
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:playwright-storybook-latest
         only-severities: critical,high
         exit-code: true
