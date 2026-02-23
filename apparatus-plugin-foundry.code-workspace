@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.preferredLightColorTheme": "Nord - Zam",
+		"workbench.preferredDarkColorTheme": "Nord Midnight"
+	},
+	"extensions": {
+		"recommendations": [
+			"zambam83.nord-theme",
+			"adorabilis.nord-midnight"
+		]
+	}
+}

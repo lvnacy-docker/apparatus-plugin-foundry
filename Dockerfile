@@ -25,7 +25,8 @@ WORKDIR /home/$USERNAME
 
 # Set up Volta environment
 ENV VOLTA_HOME=/home/$USERNAME/.volta
-ENV PATH=$VOLTA_HOME/bin:$PATH
+ENV PNPM_HOME=/home/$USERNAME/.local/share/pnpm
+ENV PATH=$VOLTA_HOME/bin:$PNPM_HOME:$PATH
 
 # Install Volta as the vscode user
 RUN curl https://get.volta.sh | bash
@@ -38,14 +39,14 @@ RUN echo 'export VOLTA_HOME="/home/vscode/.volta"' >> /home/$USERNAME/.bashrc \
 RUN volta install node@22
 
 # Install global tools
-RUN npm install -g typescript npm@latest
+RUN volta install pnpm typescript
 
-# Pre-populate npm cache with Storybook ecosystem
+# Pre-populate pnpm cache with Storybook ecosystem
 RUN mkdir -p /home/$USERNAME/storybook-cache
 WORKDIR /home/$USERNAME/storybook-cache
 
-RUN npm init -y && \
-    npm install \
+RUN pnpm init && \
+    pnpm install \
     storybook@latest \
     @storybook/preact@latest \
     @storybook/preact-vite@latest \
@@ -59,7 +60,7 @@ RUN npm init -y && \
     preact@latest \
     vite@latest
 
-RUN npx playwright install chromium
+RUN pnpm dlx playwright install chromium
 
 
 # ============================================
@@ -128,15 +129,16 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && passwd -l root \
     && usermod -s /usr/sbin/nologin root
 
-# Copy Volta, npm cache, and Playwright browsers from builder stage
+# Copy Volta, pnpm cache, and Playwright browsers from builder stage
 COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.volta /home/$USERNAME/.volta
 COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.bashrc /home/$USERNAME/.bashrc
-COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.npm /home/$USERNAME/.npm
+COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.local/share/pnpm /home/$USERNAME/.local/share/pnpm
 COPY --from=builder --chown=$USERNAME:$USERNAME /home/$USERNAME/.cache/ms-playwright /home/$USERNAME/.cache/ms-playwright
 
 # Set up environment for the vscode user
 ENV VOLTA_HOME=/home/$USERNAME/.volta
-ENV PATH=$VOLTA_HOME/bin:$PATH
+ENV PNPM_HOME=/home/$USERNAME/.local/share/pnpm
+ENV PATH=$VOLTA_HOME/bin:$PNPM_HOME:$PATH
 
 # Switch to non-root user
 USER $USERNAME
