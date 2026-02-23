@@ -1,6 +1,40 @@
-# Hardened Storybook Devcontainer
+<div align="center">
+<br>
+<h1>L V N A C Y Apparatus Plugin Foundry</h1>
+<p><i>Produced with Love, Magic, and Madness, by L V N A C Y</i></p>
+<br />
+<img
+    src="./assets/lvnacy_emblem_plain.png"
+    width="200px"
+/>
+</div>
 
-A security-hardened development container for building and testing Preact components with Storybook 10, featuring accessibility testing, browser-based testing with Vitest, and Node.js version management via Volta.
+<br />
+
+<div align="center">
+    •
+    <a href="https://github.com/lvnacy/">GitHub</a>
+    •
+    <a href="https://bsky.app/profile/lvnacy.xyz/">Bluesky</a>
+    •
+    <a href="https://discord.gg/nh7mqGEfbw">Discord</a>
+    •
+    <br>
+</div>
+
+<br />
+
+<div align="center">
+<h2>Hardened Obsidian Plugin Development Container</h2>
+</div>
+
+A security-hardened development container for building and testing Preact components with Storybook 10, featuring accessibility testing, browser-based testing with Vitest, and Node.js version management via Volta. This Foundry is the development home for Apparatus plugin work.
+
+## About the Apparatus
+
+The LVNACY Apparatus is a modular system for Obsidian that centers on context and portability. It is designed to live in git submodules so each module can be versioned, shared, and updated independently. Modules act as self-contained blocks that can be moved between vaults and dropped into a project when you want to add a specific layer of context or capability.
+
+The Foundry exists to keep plugin development consistent with the Apparatus ethos: composable, portable, and versioned. For a deeper overview, see the [APPARATUS_README.md](APPARATUS_README.md).
 
 ## Features
 
@@ -15,9 +49,9 @@ A security-hardened development container for building and testing Preact compon
 
 ### Core Tools
 
-- [**Volta**](https://volta.sh/) - JavaScript toolchain manager for consistent Node.js and npm versions
+- [**Volta**](https://volta.sh/) - JavaScript toolchain manager for consistent Node.js and pnpm versions
 - [**Node.js**](https://nodejs.org/) (v20.18.1) - JavaScript runtime
-- [**npm**](https://www.npmjs.com/) (v10+) - Package manager
+- [**pnpm**](https://pnpm.io/) - Fast, disk space efficient package manager
 - [**TypeScript**](https://www.typescriptlang.org/) - Type-safe JavaScript (globally installed)
 
 ### Storybook Ecosystem
@@ -57,8 +91,8 @@ docker build -t storybook-devcontainer .
 2. Open the project in VS Code
 3. Use the command palette: "Dev Containers: Reopen in Container"
 4. Navigate to your submodule directory
-5. Run `npm install` to install project dependencies
-6. Start Storybook with `npm run storybook`
+5. Run `pnpm install` to install project dependencies
+6. Start Storybook with `pnpm storybook`
 
 ### Working with Submodules
 
@@ -66,20 +100,20 @@ This devcontainer is designed to work with mono-repo or multi-submodule projects
 
 ```bash
 cd path/to/your/submodule
-npm install
-npm run storybook
+pnpm install
+pnpm storybook
 ```
 
-The pre-populated npm cache will significantly speed up package installation.
+The pre-populated pnpm store will significantly speed up package installation.
 
 ### Running Tests
 
 ```bash
 # Run Vitest tests
-npm run test
+pnpm test
 
 # Run Storybook test runner
-npm run test-storybook
+pnpm test-storybook
 ```
 
 ## Security
@@ -109,12 +143,12 @@ This devcontainer implements multiple security best practices to minimize attack
 - Build tools and temporary files never make it to production image
 
 #### 5. **Pre-installed Dependencies**
-- All npm packages cached during build phase with root privileges
+- All pnpm packages cached during build phase with root privileges
 - Playwright browsers and system dependencies installed at build time
-- Runtime installations leverage pre-populated cache, avoiding network calls
+- Runtime installations leverage pre-populated store, avoiding network calls
 
 #### 6. **Immutable Toolchain**
-- Volta-managed Node.js and npm versions locked at build time
+- Volta-managed Node.js and pnpm versions locked at build time
 - Consistent tooling across all environments
 
 ### What This Prevents
@@ -127,7 +161,7 @@ This devcontainer implements multiple security best practices to minimize attack
 
 ### What Users CAN Do
 
-- Install project dependencies via `npm install` (uses pre-populated cache)
+- Install project dependencies via `pnpm install` (uses pre-populated store)
 - Run development servers (Storybook, Vite)
 - Execute tests (Vitest, Playwright)
 - Develop and build applications normally
@@ -138,7 +172,7 @@ This devcontainer implements multiple security best practices to minimize attack
 - Install system packages (`apt install` unavailable)
 - Modify system files or binaries
 - Switch to root user
-- Install global npm packages requiring compilation
+- Install global pnpm packages requiring compilation
 - Add new system dependencies
 
 ### Security Trade-offs
@@ -163,11 +197,11 @@ To update Storybook or other dependencies:
 
 ### Adding New Tools
 
-To add new npm packages to the cache:
+To add new pnpm packages to the store:
 
-1. Add them to the `npm install` command in the builder stage (line ~50)
+1. Add them to the `pnpm install` command in the builder stage (line ~50)
 2. Rebuild the image
-3. The packages will be available in the cache for faster installation
+3. The packages will be available in the store for faster installation
 
 ### Updating Node.js Version
 
@@ -188,11 +222,11 @@ If the Storybook sidebar loads but stories don't render:
 - Verify no conflicting addons
 - Ensure proper port forwarding in devcontainer configuration
 
-### Slow `npm install`
+### Slow `pnpm install`
 
-First install will be slower as packages are downloaded. Subsequent installs should be fast due to the pre-populated cache. If still slow:
-- Verify the npm cache was copied correctly from builder stage
-- Check that `/home/vscode/.npm` exists in the container
+First install will be slower as packages are downloaded. Subsequent installs should be fast due to the pre-populated store. If still slow:
+- Verify the pnpm store was copied correctly from builder stage
+- Check that `/home/vscode/.local/share/pnpm` exists in the container
 
 ### Playwright Tests Failing
 
