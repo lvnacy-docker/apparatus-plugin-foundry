@@ -43,7 +43,7 @@ RUN volta install node@22
 # Install global tools
 RUN volta install pnpm \
         typescript \
-        elsint \
+        eslint \
         obsidian \
         obsidian-dev-utils
 
